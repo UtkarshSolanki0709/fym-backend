@@ -1,0 +1,22 @@
+export const AUTH = {
+  SIGNUP_WINDOW_MS: 60_000,
+  SIGNUP_MAX: 3,
+  SIGNIN_WINDOW_MS: 60_000,
+  SIGNIN_MAX: 10,
+};
+
+export const OTP = {
+  SEND_WINDOW_MS: 60_000,
+  SEND_MAX: 3,
+  VERIFY_WINDOW_MS: 60_000,
+  VERIFY_MAX: 10,
+};
+
+export const PHOTO = {
+  MAX_COUNT: 6,
+};
+
+export const LIVENESS = {
+  FRAME_RETENTION_DAYS: 30,
+  DUPLICATE_HASH_THRESHOLD: 0.05,
+};
