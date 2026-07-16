@@ -1,5 +1,5 @@
 import { supabase } from "../libs/supabaseClient.js";
-import { uploadToR2 } from "../libs/r2Client.js";
+import { uploadToStorage } from "../libs/supabaseStorage.js";
 import { grayscaleHash, hashSimilarity, eyesOpenCount } from "../utils/image.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
 import { env } from "../config/env.js";
@@ -24,7 +24,7 @@ export async function verifyLiveness(userId: string, frames: string[]) {
   }
 
   await Promise.all(bufs.map((buf, i) =>
-    uploadToR2(`liveness/${userId}/${Date.now()}_${i}.jpg`, buf, "image/jpeg"),
+    uploadToStorage(`liveness/${userId}/${Date.now()}_${i}.jpg`, buf, "image/jpeg"),
   ));
 
   await supabase.from("profiles").update({

@@ -1,5 +1,5 @@
 import { supabase } from "../libs/supabaseClient.js";
-import { uploadToR2, deleteFromR2 } from "../libs/r2Client.js";
+import { uploadToStorage, deleteFromStorage } from "../libs/supabaseStorage.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
 import { PHOTO } from "../config/constants.js";
 import { randomUUID } from "crypto";
@@ -65,12 +65,12 @@ export async function addPhoto(userId: string, base64: string) {
   const buf = Buffer.from(base64, "base64");
   const id = randomUUID();
   const key = r2Key(userId, `${id}.jpg`);
-  const url = await uploadToR2(key, buf, "image/jpeg");
+  const url = await uploadToStorage(key, buf, "image/jpeg");
 
   const { data, error } = await supabase
     .rpc("append_photo", { p_user_id: userId, p_photo: { id, url } });
   if (error) {
-    await deleteFromR2(key);
+    await deleteFromStorage(key);
     throw new AppError(500, "UPLOAD_FAILED", error.message);
   }
 
@@ -90,7 +90,7 @@ export async function deletePhoto(userId: string, photoId: string) {
 
   const key = r2Key(userId, `${photoId}.jpg`);
   await Promise.all([
-    deleteFromR2(key),
+    deleteFromStorage(key),
     supabase.rpc("remove_photo", { p_user_id: userId, p_photo_id: photoId }),
   ]);
 }
