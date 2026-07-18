@@ -7,13 +7,15 @@ import * as authService from "../services/auth.service.js";
 
 const router = Router();
 
+// Phone normalized in service — accept common formats here
 const otpSendSchema = z.object({
-  phone: z.string().regex(/^\+[1-9]\d{1,14}$/, "E.164 format required"),
+  phone: z.string().min(8).max(20),
 });
 
 const otpVerifySchema = z.object({
-  phone: z.string().regex(/^\+[1-9]\d{1,14}$/),
-  token: z.string().length(6),
+  phone: z.string().min(8).max(20),
+  // Twilio Verify usually 6; allow 4–10 after digit strip in service
+  token: z.string().min(4).max(12),
 });
 
 const signupSchema = z.object({

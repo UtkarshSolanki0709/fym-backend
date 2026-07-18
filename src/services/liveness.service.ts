@@ -1,5 +1,5 @@
 import { supabase } from "../libs/supabaseClient.js";
-import { uploadToStorage } from "../libs/supabaseStorage.js";
+import { uploadToStorage } from "../libs/r2Client.js";
 import { grayscaleHash, hashSimilarity, eyesOpenCount } from "../utils/image.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
 import { env } from "../config/env.js";

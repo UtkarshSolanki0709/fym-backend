@@ -1,15 +1,24 @@
 import "dotenv/config";
+import { z } from "zod";
 
-function requireEnv(key: string): string {
-  const val = process.env[key];
-  if (!val) throw new Error(`Missing required env var: ${key}`);
-  return val;
+const schema = z.object({
+  SUPABASE_URL: z.string().url(),
+  SUPABASE_SECRET_KEY: z.string().min(1),
+  SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
+  PORT: z.coerce.number().int().positive().default(3001),
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  CORS_ORIGIN: z.string().default("*"),
+  R2_ACCOUNT_ID: z.string().min(1),
+  R2_ACCESS_KEY_ID: z.string().min(1),
+  R2_SECRET_ACCESS_KEY: z.string().min(1),
+  R2_BUCKET_NAME: z.string().min(1).default("fymback"),
+  R2_PUBLIC_URL: z.string().default(""),
+});
+
+const parsed = schema.safeParse(process.env);
+if (!parsed.success) {
+  console.error("Invalid env:", parsed.error.flatten().fieldErrors);
+  throw new Error("Invalid environment configuration");
 }
 
-export const env = {
-  SUPABASE_URL: requireEnv("SUPABASE_URL"),
-  SUPABASE_SECRET_KEY: requireEnv("SUPABASE_SECRET_KEY"),
-  PORT: parseInt(process.env.PORT || "3001", 10),
-  NODE_ENV: process.env.NODE_ENV || "development",
-
-};
+export const env = parsed.data;

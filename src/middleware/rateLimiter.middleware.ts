@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "./errorHandler.middleware.js";
 
+// ponytail: in-memory, resets on restart. Swap to Redis/DB when multi-instance.
 const hits = new Map<string, { count: number; resetsAt: number }>();
 
 export function rateLimiter(keyFn: (req: Request) => string, max: number, windowMs: number) {
