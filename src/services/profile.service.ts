@@ -1,8 +1,14 @@
 import { supabase } from "../libs/supabaseClient.js";
-import { uploadToStorage, deleteFromStorage } from "../libs/r2Client.js";
+import { uploadEncrypted, deleteFromStorage, isR2Enabled } from "../libs/r2Client.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
 import { PHOTO } from "../config/constants.js";
 import { randomUUID } from "crypto";
+import {
+  resolvePhotoUrls,
+  storageKeyFromPhoto,
+  type PhotoRecord,
+} from "../utils/photoUrls.js";
+import { buildSignedMediaUrl } from "../utils/mediaCrypto.js";
 
 
 function r2Key(userId: string, filename: string) {
@@ -76,7 +82,10 @@ export async function getProfile(userId: string) {
   if (error || !data) {
     throw new AppError(404, "PROFILE_NOT_FOUND", error?.message ?? "Profile not found");
   }
-  return data;
+  return {
+    ...data,
+    photos: resolvePhotoUrls(data.photos),
+  };
 }
 
 export async function updateProfile(userId: string, updates: Record<string, any>) {
@@ -134,6 +143,9 @@ function detectMime(buf: Buffer): string | null {
 }
 
 export async function addPhoto(userId: string, base64: string) {
+  if (!isR2Enabled()) {
+    throw new AppError(503, "R2_NOT_CONFIGURED", "Photo upload unavailable — storage not configured");
+  }
   const { count } = await supabase
     .from("profiles")
     .select("photos", { count: "exact", head: true })
@@ -153,18 +165,28 @@ export async function addPhoto(userId: string, base64: string) {
   }
 
   const id = randomUUID();
-  const ext = mime.split("/")[1];
+  const ext = mime === "image/jpeg" ? "jpeg" : mime.split("/")[1];
   const key = r2Key(userId, `${id}.${ext}`);
-  const url = await uploadToStorage(key, buf, mime);
 
-  const { data, error } = await supabase
-    .rpc("append_photo", { p_user_id: userId, p_photo: { id, url } });
+  // Encrypt at rest — no public R2 CDN URL stored
+  await uploadEncrypted(key, buf, mime);
+
+  const record = { id, key, enc: true as const };
+  const { error } = await supabase.rpc("append_photo", {
+    p_user_id: userId,
+    p_photo: record,
+  });
   if (error) {
     await deleteFromStorage(key);
     throw new AppError(500, "UPLOAD_FAILED", error.message);
   }
 
-  return { id, url };
+  return {
+    id,
+    key,
+    enc: true,
+    url: buildSignedMediaUrl(key),
+  };
 }
 
 export async function deletePhoto(userId: string, photoId: string) {
@@ -172,15 +194,15 @@ export async function deletePhoto(userId: string, photoId: string) {
     .from("profiles")
     .select("photos")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
   if (!profile) throw new AppError(404, "PROFILE_NOT_FOUND", "Profile not found");
 
-  const photo = profile.photos?.find((p: { id: string }) => p.id === photoId);
+  const photo = (profile.photos as PhotoRecord[] | null)?.find((p) => p.id === photoId);
   if (!photo) throw new AppError(404, "PHOTO_NOT_FOUND", "Photo not found");
 
-  const key = r2Key(userId, `${photoId}.jpg`);
+  const key = storageKeyFromPhoto(photo, userId);
   await Promise.all([
-    deleteFromStorage(key),
+    key ? deleteFromStorage(key).catch(() => undefined) : Promise.resolve(),
     supabase.rpc("remove_photo", { p_user_id: userId, p_photo_id: photoId }),
   ]);
 }

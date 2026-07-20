@@ -1,8 +1,7 @@
 import { supabase } from "../libs/supabaseClient.js";
-import { uploadToStorage } from "../libs/r2Client.js";
+import { uploadEncrypted } from "../libs/r2Client.js";
 import { grayscaleHash, hashSimilarity, eyesOpenCount } from "../utils/image.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
-import { env } from "../config/env.js";
 
 export async function verifyLiveness(userId: string, frames: string[]) {
   const bufs = frames.map(f => Buffer.from(f, "base64"));
@@ -23,9 +22,11 @@ export async function verifyLiveness(userId: string, frames: string[]) {
     throw new AppError(400, "LIVENESS_FAILED", "Eyes not detected as open in 2+ frames");
   }
 
-  await Promise.all(bufs.map((buf, i) =>
-    uploadToStorage(`liveness/${userId}/${Date.now()}_${i}.jpg`, buf, "image/jpeg"),
-  ));
+  await Promise.all(
+    bufs.map((buf, i) =>
+      uploadEncrypted(`liveness/${userId}/${Date.now()}_${i}.jpg`, buf, "image/jpeg"),
+    ),
+  );
 
   await supabase.from("profiles").update({
     is_verified: true,

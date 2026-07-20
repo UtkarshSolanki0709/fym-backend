@@ -9,6 +9,7 @@ import profileRoutes from "./routes/profile.routes.js";
 import onboardingRoutes from "./routes/onboarding.routes.js";
 import discoveryRoutes from "./routes/discovery.routes.js";
 import swipeRoutes from "./routes/swipe.routes.js";
+import mediaRoutes from "./routes/media.routes.js";
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use(express.json({ limit: "12mb" }));
 app.use(requestLogger);
 app.get("/", (_req, res) => res.json({ message: "Find Your Match API" }));
 app.use(healthRoutes);
+app.use(mediaRoutes);
 app.use(authRoutes);
 app.use(livenessRoutes);
 app.use(profileRoutes);

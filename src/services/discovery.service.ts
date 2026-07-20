@@ -11,6 +11,7 @@ import {
   proximityScore,
   trustNorm,
 } from "../utils/scoring.js";
+import { resolvePhotoUrls } from "../utils/photoUrls.js";
 
 export type DiscoveryCard = {
   id: string;
@@ -98,7 +99,7 @@ export async function getDiscoveryBatch(viewerId: string): Promise<{
       display_name: p.display_name,
       age: p.age,
       bio: p.bio,
-      photos: p.photos,
+      photos: resolvePhotoUrls(p.photos),
       interests: p.interests,
       prompts: p.prompts,
       is_verified: p.is_verified,
