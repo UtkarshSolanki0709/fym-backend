@@ -42,7 +42,7 @@ router.delete("/profile/photos/:id", auth, async (req, res, next) => {
 router.post(
   "/profile/interests",
   auth,
-  rateLimiter(() => "interests", 10, 60_000),
+  rateLimiter((req) => req.user?.id ?? "anon", 10, 60_000),
   validateBody(interestsSchema),
   async (req, res, next) => {
     try {
@@ -54,7 +54,7 @@ router.post(
 router.post(
   "/profile/prompts",
   auth,
-  rateLimiter(() => "prompts", 10, 60_000),
+  rateLimiter((req) => req.user?.id ?? "anon", 10, 60_000),
   validateBody(promptsSchema),
   async (req, res, next) => {
     try {
@@ -66,7 +66,7 @@ router.post(
 router.post(
   "/profile/personality-quiz",
   auth,
-  rateLimiter(() => "quiz", 10, 60_000),
+  rateLimiter((req) => req.user?.id ?? "anon", 10, 60_000),
   validateBody(quizSchema),
   async (req, res, next) => {
     try {
@@ -78,7 +78,7 @@ router.post(
 router.put(
   "/profile/preferences",
   auth,
-  rateLimiter(() => "preferences", 10, 60_000),
+  rateLimiter((req) => req.user?.id ?? "anon", 10, 60_000),
   validateBody(preferencesSchema),
   async (req, res, next) => {
     try {

@@ -10,7 +10,7 @@ const router = Router();
 router.post(
   "/onboarding/liveness",
   auth,
-  rateLimiter(() => "liveness", 5, 60_000),
+  rateLimiter((req) => req.user?.id ?? "anon", 5, 60_000),
   validateBody(livenessSchema),
   async (req, res, next) => {
     try {

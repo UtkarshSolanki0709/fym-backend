@@ -12,6 +12,7 @@ import {
   trustNorm,
 } from "../utils/scoring.js";
 import { resolvePhotoUrls } from "../utils/photoUrls.js";
+import { needsReset } from "../utils/quota.js";
 
 export type DiscoveryCard = {
   id: string;
@@ -135,13 +136,4 @@ function remainingSwipes(viewer: {
   return Math.max(0, cap + bonus - used);
 }
 
-function needsReset(resetDate: string | null): boolean {
-  if (!resetDate) return true;
-  const d = new Date(resetDate);
-  const now = new Date();
-  return (
-    d.getUTCFullYear() !== now.getUTCFullYear() ||
-    d.getUTCMonth() !== now.getUTCMonth() ||
-    d.getUTCDate() !== now.getUTCDate()
-  );
-}
+

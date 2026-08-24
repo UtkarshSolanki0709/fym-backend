@@ -55,9 +55,16 @@ export function storageKeyFromPhoto(
   if (photo.key) return photo.key;
   const fromUrl = extractKeyFromPublicUrl(photo.url);
   if (fromUrl) return fromUrl;
-  // try common extensions for legacy deletes
-  for (const ext of ["jpeg", "jpg", "png", "webp"]) {
-    return `profiles/${userId}/${photo.id}.${ext}`;
+  if (!photo.id) return null;
+
+  // If url contains an extension, extract and preserve it
+  if (photo.url) {
+    const extMatch = photo.url.match(/\.(jpeg|jpg|png|webp)(?:\?|$)/i);
+    if (extMatch) {
+      return `profiles/${userId}/${photo.id}.${extMatch[1].toLowerCase()}`;
+    }
   }
-  return null;
+
+  // Default fallback for legacy uploads created with jpeg
+  return `profiles/${userId}/${photo.id}.jpeg`;
 }

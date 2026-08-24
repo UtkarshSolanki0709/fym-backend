@@ -146,12 +146,13 @@ export async function addPhoto(userId: string, base64: string) {
   if (!isR2Enabled()) {
     throw new AppError(503, "R2_NOT_CONFIGURED", "Photo upload unavailable — storage not configured");
   }
-  const { count } = await supabase
+  const { data: profile } = await supabase
     .from("profiles")
-    .select("photos", { count: "exact", head: true })
+    .select("photos")
     .eq("id", userId)
-    .single();
-  if (count && count >= PHOTO.MAX_COUNT) {
+    .maybeSingle();
+  const currentPhotos = (profile?.photos as PhotoRecord[] | null) ?? [];
+  if (currentPhotos.length >= PHOTO.MAX_COUNT) {
     throw new AppError(400, "PHOTO_LIMIT", `Max ${PHOTO.MAX_COUNT} photos`);
   }
 

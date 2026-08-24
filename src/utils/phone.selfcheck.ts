@@ -10,4 +10,4 @@ assert.equal(normalizeE164("+919876543210"), "+919876543210");
 assert.ok(isE164("+919876543210"));
 assert.ok(!isE164("9876543210"));
 
-console.log("phone.selfcheck OK");
+

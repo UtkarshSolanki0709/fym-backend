@@ -10,6 +10,10 @@ import onboardingRoutes from "./routes/onboarding.routes.js";
 import discoveryRoutes from "./routes/discovery.routes.js";
 import swipeRoutes from "./routes/swipe.routes.js";
 import mediaRoutes from "./routes/media.routes.js";
+import keysRoutes from "./routes/keys.routes.js";
+import chatRoutes from "./routes/chat.routes.js";
+import matchesRoutes from "./routes/matches.routes.js";
+import pushRoutes from "./routes/push.routes.js";
 
 const app = express();
 
@@ -44,6 +48,10 @@ app.use(profileRoutes);
 app.use(onboardingRoutes);
 app.use(discoveryRoutes);
 app.use(swipeRoutes);
+app.use(keysRoutes);
+app.use(chatRoutes);
+app.use(matchesRoutes);
+app.use(pushRoutes);
 app.use(errorHandler);
 
 export default app;

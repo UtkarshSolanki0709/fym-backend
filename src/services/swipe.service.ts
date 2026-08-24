@@ -2,19 +2,9 @@ import { randomUUID } from "crypto";
 import { supabase } from "../libs/supabaseClient.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
 import { NEGATIVE_REVIEW_TAGS, SWIPE } from "../config/constants.js";
+import { needsReset } from "../utils/quota.js";
 
 type Action = "like" | "superlike" | "pass";
-
-function needsReset(resetDate: string | null): boolean {
-  if (!resetDate) return true;
-  const d = new Date(resetDate);
-  const now = new Date();
-  return (
-    d.getUTCFullYear() !== now.getUTCFullYear() ||
-    d.getUTCMonth() !== now.getUTCMonth() ||
-    d.getUTCDate() !== now.getUTCDate()
-  );
-}
 
 function dailyCap(tier: string | null, kind: "swipe" | "superlike"): number {
   const t = (tier ?? "FREE").toUpperCase();
@@ -142,18 +132,47 @@ async function tryMatch(swiperId: string, targetId: string): Promise<{
 
   if (!reverse) return { matched: false };
 
-  // create room + members
+  const [userA, userB] = swiperId < targetId ? [swiperId, targetId] : [targetId, swiperId];
+
+  // Check if room already exists for this pair
+  const { data: existingRoom } = await supabase
+    .from("rooms")
+    .select("id")
+    .eq("user_a", userA)
+    .eq("user_b", userB)
+    .maybeSingle();
+
+  if (existingRoom) {
+    return { matched: true, roomId: existingRoom.id };
+  }
+
+  // Create room + members
   const { data: room, error: rErr } = await supabase
     .from("rooms")
-    .insert({})
+    .insert({ user_a: userA, user_b: userB })
     .select("id")
     .single();
-  if (rErr || !room) throw new AppError(500, "ROOM_CREATE_FAILED", rErr?.message ?? "room");
 
-  const { error: mErr } = await supabase.from("room_members").insert([
-    { room_id: room.id, user_id: swiperId },
-    { room_id: room.id, user_id: targetId },
-  ]);
+  if (rErr) {
+    if (rErr.code === "23505") {
+      const { data: retryRoom } = await supabase
+        .from("rooms")
+        .select("id")
+        .eq("user_a", userA)
+        .eq("user_b", userB)
+        .maybeSingle();
+      if (retryRoom) return { matched: true, roomId: retryRoom.id };
+    }
+    throw new AppError(500, "ROOM_CREATE_FAILED", rErr.message ?? "room");
+  }
+
+  const { error: mErr } = await supabase.from("room_members").upsert(
+    [
+      { room_id: room.id, user_id: swiperId },
+      { room_id: room.id, user_id: targetId },
+    ],
+    { onConflict: "room_id,user_id", ignoreDuplicates: true },
+  );
   if (mErr) throw new AppError(500, "ROOM_MEMBER_FAILED", mErr.message);
 
   return { matched: true, roomId: room.id };

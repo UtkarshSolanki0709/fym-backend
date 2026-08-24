@@ -33,10 +33,13 @@ export function isR2Enabled(): boolean {
 
 export async function initStorage() {
   if (!isR2Enabled()) {
-    console.log("R2 not configured, skipping bucket check");
     return;
   }
   await s3().send(new HeadBucketCommand({ Bucket: env.R2_BUCKET_NAME }));
+}
+
+export function getS3Client(): S3Client {
+  return s3();
 }
 
 /**
@@ -63,17 +66,6 @@ export async function uploadEncrypted(
     }),
   );
   return { key };
-}
-
-/** @deprecated use uploadEncrypted — kept for callers that still pass plain */
-export async function uploadToStorage(
-  key: string,
-  body: Buffer,
-  contentType: string,
-): Promise<string> {
-  await uploadEncrypted(key, body, contentType);
-  // No public URL — caller must use signed /media links
-  return key;
 }
 
 export async function getObject(key: string): Promise<{

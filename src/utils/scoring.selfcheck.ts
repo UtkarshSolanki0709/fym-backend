@@ -41,4 +41,4 @@ assert.ok(Math.abs(score - 1) < 1e-9);
 const g = parseGeo({ type: "Point", coordinates: [77.2, 28.6] });
 assert.deepEqual(g, { lat: 28.6, lng: 77.2 });
 
-console.log("scoring.selfcheck OK");
+

@@ -17,4 +17,4 @@ assert.ok(verifyMediaSignature(key, exp, sig));
 assert.ok(!verifyMediaSignature(key, exp, "bad"));
 assert.ok(!verifyMediaSignature(key, Math.floor(Date.now() / 1000) - 10, sig));
 
-console.log("mediaCrypto.selfcheck OK");
+
