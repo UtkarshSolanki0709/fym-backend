@@ -18,7 +18,7 @@ router.post(
   validateBody(likeSchema),
   async (req, res, next) => {
     try {
-      res.json(await swipeService.like(req.user!.id, req.body.target_id));
+      res.json(await swipeService.like(req.user!.id, req.body.target_id, req.body.note));
     } catch (e) {
       next(e);
     }
@@ -32,12 +32,20 @@ router.post(
   validateBody(superlikeSchema),
   async (req, res, next) => {
     try {
-      res.json(await swipeService.superlike(req.user!.id, req.body.target_id));
+      res.json(await swipeService.superlike(req.user!.id, req.body.target_id, req.body.note));
     } catch (e) {
       next(e);
     }
   },
 );
+
+router.get("/swipe/likes", auth, async (req, res, next) => {
+  try {
+    res.json(await swipeService.incomingLikes(req.user!.id));
+  } catch (e) {
+    next(e);
+  }
+});
 
 router.post(
   "/swipe/pass/batch",

@@ -1,8 +1,8 @@
 node_modules/
 dist/
 .env
-Architecture.md
-Backend.md
-Backend-Phases.md
-supabase_database_architecture.md
+
+# planning/scan docs live in the workspace root (FYM/docs), never in this repo
+*.md
+.mimosa/
 wild-hall-3eb2

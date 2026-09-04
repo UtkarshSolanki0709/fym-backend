@@ -46,12 +46,19 @@ export async function getDiscoveryBatch(viewerId: string): Promise<{
     throw new AppError(403, "ACCOUNT_RESTRICTED", "Account cannot use discovery");
   }
 
-  const { data: swipedRows } = await supabase
-    .from("swipes")
-    .select("target_id")
-    .eq("swiper_id", viewerId);
+  const [{ data: swipedRows }, { data: iBlocked }, { data: blockedMe }] = await Promise.all([
+    supabase.from("swipes").select("target_id").eq("swiper_id", viewerId),
+    supabase.from("blocks").select("blocked_id").eq("blocker_id", viewerId),
+    supabase.from("blocks").select("blocker_id").eq("blocked_id", viewerId),
+  ]);
 
-  const exclude = new Set<string>([viewerId, ...(swipedRows ?? []).map((r) => r.target_id)]);
+  const exclude = new Set<string>([
+    viewerId,
+    ...(swipedRows ?? []).map((r) => r.target_id),
+    // blocked in either direction — never resurface that person
+    ...(iBlocked ?? []).map((r) => r.blocked_id),
+    ...(blockedMe ?? []).map((r) => r.blocker_id),
+  ]);
 
   const ageMin = viewer.age_min ?? 18;
   const ageMax = viewer.age_max ?? 99;

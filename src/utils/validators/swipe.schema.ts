@@ -2,10 +2,12 @@ import { z } from "zod";
 
 export const likeSchema = z.object({
   target_id: z.string().uuid(),
+  note: z.string().max(240).optional(),
 });
 
 export const superlikeSchema = z.object({
   target_id: z.string().uuid(),
+  note: z.string().max(240).optional(),
 });
 
 export const passBatchSchema = z.object({

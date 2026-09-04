@@ -88,7 +88,12 @@ async function assertQuota(userId: string, kind: "swipe" | "superlike") {
   return viewer;
 }
 
-async function recordSwipe(swiperId: string, targetId: string, action: Action) {
+async function recordSwipe(
+  swiperId: string,
+  targetId: string,
+  action: Action,
+  note?: string,
+) {
   if (swiperId === targetId) {
     throw new AppError(400, "SELF_SWIPE", "Cannot swipe yourself");
   }
@@ -106,6 +111,7 @@ async function recordSwipe(swiperId: string, targetId: string, action: Action) {
     swiper_id: swiperId,
     target_id: targetId,
     action,
+    note: note?.trim() || null,
   });
   if (error) {
     if (error.code === "23505") {
@@ -178,18 +184,88 @@ async function tryMatch(swiperId: string, targetId: string): Promise<{
   return { matched: true, roomId: room.id };
 }
 
-export async function like(swiperId: string, targetId: string) {
+export async function like(swiperId: string, targetId: string, note?: string) {
   await assertQuota(swiperId, "swipe");
-  await recordSwipe(swiperId, targetId, "like");
+  await recordSwipe(swiperId, targetId, "like", note);
   const match = await tryMatch(swiperId, targetId);
   return { ok: true, action: "like" as const, ...match };
 }
 
-export async function superlike(swiperId: string, targetId: string) {
+export async function superlike(swiperId: string, targetId: string, note?: string) {
   await assertQuota(swiperId, "superlike");
-  await recordSwipe(swiperId, targetId, "superlike");
+  await recordSwipe(swiperId, targetId, "superlike", note);
   const match = await tryMatch(swiperId, targetId);
   return { ok: true, action: "superlike" as const, ...match };
+}
+
+export async function incomingLikes(userId: string) {
+  const viewer = await loadViewer(userId);
+  const tier = (viewer.subscription_tier ?? "FREE").toUpperCase();
+
+  // Users I blocked, and users who blocked me — both directions vanish.
+  const [{ data: iBlocked }, { data: blockedMe }] = await Promise.all([
+    supabase.from("blocks").select("blocked_id").eq("blocker_id", userId),
+    supabase.from("blocks").select("blocker_id").eq("blocked_id", userId),
+  ]);
+  const hidden = new Set<string>([
+    ...(iBlocked ?? []).map((r) => r.blocked_id as string),
+    ...(blockedMe ?? []).map((r) => r.blocker_id as string),
+  ]);
+
+  const { data: incoming, error } = await supabase
+    .from("swipes")
+    .select("swiper_id, action, note, created_at")
+    .eq("target_id", userId)
+    .in("action", ["like", "superlike"])
+    .order("created_at", { ascending: false });
+  if (error) throw new AppError(500, "LIKES_FAILED", error.message);
+
+  // Likes I already reciprocated (or passed on) are decided — matches own them.
+  const { data: mine } = await supabase
+    .from("swipes")
+    .select("target_id")
+    .eq("swiper_id", userId);
+  const decided = new Set((mine ?? []).map((r) => r.target_id as string));
+
+  const fresh = (incoming ?? []).filter(
+    (r) => !decided.has(r.swiper_id as string) && !hidden.has(r.swiper_id as string),
+  );
+
+  if (tier === "FREE") {
+    // Freemium: teaser only — count proves the screen is live without
+    // leaking identity. Unlocks with Plus (RevenueCat, Backend Phase 3).
+    return { tier, total: fresh.length, profiles: [] };
+  }
+
+  const likerIds = [...new Set(fresh.map((r) => r.swiper_id as string))];
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, display_name, age, photos, is_verified")
+    .in("id", likerIds.length ? likerIds : ["00000000-0000-0000-0000-000000000000"]);
+
+  const byId = new Map((profiles ?? []).map((p) => [p.id as string, p]));
+  const result = fresh
+    .map((r) => {
+      const p = byId.get(r.swiper_id as string);
+      if (!p) return null;
+      const photos = Array.isArray(p.photos) ? p.photos : [];
+      return {
+        id: p.id as string,
+        display_name: (p.display_name as string) ?? "Someone",
+        age: (p.age as number) ?? null,
+        photo_url:
+          Array.isArray(photos) && photos[0] && typeof photos[0] === "object"
+            ? ((photos[0] as { url?: string }).url ?? null)
+            : null,
+        is_verified: (p.is_verified as boolean) ?? false,
+        superliked: r.action === "superlike",
+        note: (r.note as string | null) ?? null,
+        liked_at: r.created_at as string,
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+
+  return { tier, total: result.length, profiles: result };
 }
 
 export async function passBatch(
