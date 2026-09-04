@@ -90,7 +90,7 @@ export function verifyMediaSignature(
   }
 }
 
-/** Public API base for building media URLs (Railway / local) */
+/** Public API base for building media URLs (Render / local) */
 export function mediaPublicBase(): string {
   const base = (env.API_PUBLIC_URL || `http://localhost:${env.PORT}`).replace(/\/$/, "");
   return base;

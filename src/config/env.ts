@@ -15,7 +15,7 @@ const schema = z.object({
   R2_BUCKET_NAME: z.string().min(1).default("fymback"),
   /** Legacy public CDN base — prefer encrypted private objects + /media */
   R2_PUBLIC_URL: z.string().default(""),
-  /** Public API origin for signed media URLs (e.g. https://xxx.up.railway.app) */
+  /** Public API origin for signed media URLs (e.g. https://fym-backend-tec9.onrender.com) */
   API_PUBLIC_URL: z.string().optional(),
   /** 32-byte key, base64. Optional — derived from SUPABASE_SECRET_KEY if unset */
   MEDIA_ENCRYPTION_KEY: z.string().optional(),
