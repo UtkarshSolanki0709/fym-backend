@@ -58,7 +58,7 @@ export function isEncryptedBlob(buf: Buffer): boolean {
   return buf.length > 1 + IV_LEN + TAG_LEN && buf[0] === VERSION;
 }
 
-const DEFAULT_TTL_SEC = 15 * 60; // 15 minutes
+const DEFAULT_TTL_SEC = 7 * 24 * 3600; // 7 days (prevents photos expiring after 15 mins)
 
 export function signMediaPath(storageKey: string, ttlSec = DEFAULT_TTL_SEC): {
   exp: number;
@@ -92,7 +92,11 @@ export function verifyMediaSignature(
 
 /** Public API base for building media URLs (Render / local) */
 export function mediaPublicBase(): string {
-  const base = (env.API_PUBLIC_URL || `http://localhost:${env.PORT}`).replace(/\/$/, "");
+  const base = (
+    env.API_PUBLIC_URL ||
+    process.env.RENDER_EXTERNAL_URL ||
+    "https://fym-backend-tec9.onrender.com"
+  ).replace(/\/$/, "");
   return base;
 }
 
