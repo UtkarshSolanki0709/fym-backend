@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import { auth } from "../middleware/auth.middleware.js";
 import { rateLimiter } from "../middleware/rateLimiter.middleware.js";
 import { validateBody } from "../middleware/validateBody.middleware.js";
@@ -16,7 +16,7 @@ router.post(
   auth,
   rateLimiter((req) => req.user?.id ?? "anon", 60, 60_000),
   validateBody(likeSchema),
-  async (req, res, next) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       res.json(await swipeService.like(req.user!.id, req.body.target_id, req.body.note));
     } catch (e) {
@@ -30,7 +30,7 @@ router.post(
   auth,
   rateLimiter((req) => req.user?.id ?? "anon", 20, 60_000),
   validateBody(superlikeSchema),
-  async (req, res, next) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       res.json(await swipeService.superlike(req.user!.id, req.body.target_id, req.body.note));
     } catch (e) {
@@ -39,7 +39,7 @@ router.post(
   },
 );
 
-router.get("/swipe/likes", auth, async (req, res, next) => {
+router.get("/swipe/likes", auth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     res.json(await swipeService.incomingLikes(req.user!.id));
   } catch (e) {
@@ -52,7 +52,7 @@ router.post(
   auth,
   rateLimiter((req) => req.user?.id ?? "anon", 20, 60_000),
   validateBody(passBatchSchema),
-  async (req, res, next) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       res.json(await swipeService.passBatch(req.user!.id, req.body.items));
     } catch (e) {
