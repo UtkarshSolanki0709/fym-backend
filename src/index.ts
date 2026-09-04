@@ -4,10 +4,11 @@ import { initStorage } from "./libs/r2Client.js";
 
 try {
   await initStorage();
+  console.log("R2 storage initialized");
 } catch (e: any) {
-  console.error("R2 init failed:", e.message);
-  process.exit(1);
+  console.warn("R2 storage initialization warning:", e.message);
 }
 
-app.listen(env.PORT, () => {
+app.listen(env.PORT, "0.0.0.0", () => {
+  console.log(`FYM backend listening on 0.0.0.0:${env.PORT} (${env.NODE_ENV})`);
 });

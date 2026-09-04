@@ -32,10 +32,11 @@ export async function submitReport(
       target_id: body.target_id,
       room_id: body.room_id ?? null,
       reasons: body.reasons,
-      notes: body.notes ?? null,
-      status: "open",
-      consent_at: new Date().toISOString(),
+      // canonical live-schema columns (DPDP artifacts)
+      reporter_notes: body.notes ?? null,
+      consent_given_at: new Date().toISOString(),
       agreement_version: body.agreement_version,
+      status: "open",
     })
     .select("id, status, created_at")
     .single();
