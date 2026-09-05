@@ -5,6 +5,12 @@ import { storageKeyFromPhoto, type PhotoRecord } from "../utils/photoUrls.js";
 import { grayscaleHash, hashSimilarity, eyesOpenCount } from "../utils/image.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
 
+// ponytail: grayscale-hash "matching" is a near-duplicate detector (64×64 mean
+// pixel diff), not face recognition — enabled as-is it would reject honest
+// users whose fresh selfie differs from their uploads. Flip on only with a
+// real embedding matcher; the onboarding reorder (photos before liveness)
+// already arms this branch. See docs/FACE_VERIFICATION.md §2.
+const PHOTO_MATCH_ENABLED = false;
 const PHOTO_SIMILARITY_THRESHOLD = 0.15;
 
 export async function verifyLiveness(userId: string, frames: string[]) {
@@ -33,7 +39,7 @@ export async function verifyLiveness(userId: string, frames: string[]) {
     .maybeSingle();
 
   const photosList = (profile?.photos as PhotoRecord[] | null) ?? [];
-  if (photosList.length > 0 && isR2Enabled()) {
+  if (PHOTO_MATCH_ENABLED && photosList.length > 0 && isR2Enabled()) {
     const photoBuffers: Buffer[] = [];
     for (const p of photosList) {
       const key = storageKeyFromPhoto(p, userId);
