@@ -7,7 +7,7 @@ import { getOnboardingStatus, updateOnboardingStep } from "../services/profile.s
 const router = Router();
 
 const stepSchema = z.object({
-  step: z.enum(["liveness_done", "basic_info", "photos", "interests", "prompts", "quiz", "complete"]),
+  step: z.enum(["liveness_done", "liveness_skipped", "basic_info", "photos", "interests", "prompts", "quiz", "complete"]),
 });
 
 router.get("/onboarding/status", auth, async (req, res, next) => {

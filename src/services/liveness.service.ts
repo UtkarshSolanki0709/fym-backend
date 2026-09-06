@@ -4,6 +4,7 @@ import { decryptMedia, isEncryptedBlob } from "../utils/mediaCrypto.js";
 import { storageKeyFromPhoto, type PhotoRecord } from "../utils/photoUrls.js";
 import { grayscaleHash, hashSimilarity, eyesOpenCount } from "../utils/image.js";
 import { AppError } from "../middleware/errorHandler.middleware.js";
+import { LIVENESS } from "../config/constants.js";
 
 // ponytail: grayscale-hash "matching" is a near-duplicate detector (64×64 mean
 // pixel diff), not face recognition — enabled as-is it would reject honest
@@ -20,8 +21,13 @@ export async function verifyLiveness(userId: string, frames: string[]) {
 
   for (let i = 0; i < hashes.length; i++) {
     for (let j = i + 1; j < hashes.length; j++) {
-      if (hashSimilarity(hashes[i], hashes[j]) < 0.05) {
+      const sim = hashSimilarity(hashes[i], hashes[j]);
+      if (sim < LIVENESS.DUPLICATE_HASH_THRESHOLD) {
+        console.warn(`[liveness] duplicate: frames ${i}↔${j} similarity=${sim.toFixed(4)} (threshold=${LIVENESS.DUPLICATE_HASH_THRESHOLD})`);
         throw new AppError(400, "LIVENESS_FAILED", "Duplicate frame detected — static photo");
+      }
+      if (sim < LIVENESS.DUPLICATE_HASH_THRESHOLD * 3) {
+        console.info(`[liveness] near-dup: frames ${i}↔${j} similarity=${sim.toFixed(4)} — close to threshold`);
       }
     }
   }

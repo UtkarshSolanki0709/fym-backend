@@ -72,6 +72,9 @@ export async function getDiscoveryBatch(viewerId: string): Promise<{
       "id, display_name, age, bio, photos, interests, prompts, is_verified, trust_score, trust_score_percentile, last_active_at, created_at, geolocation, status, onboarding_step",
     )
     .eq("status", "active")
+    // Onboarding integrity: only fully-onboarded profiles are discoverable —
+    // abandoned/half-built profiles must never surface to others
+    .eq("onboarding_step", "complete")
     .gt("trust_score_percentile", RANKING.TRUST_FLOOR)
     .gte("age", ageMin)
     .lte("age", ageMax)

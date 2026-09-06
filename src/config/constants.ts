@@ -18,7 +18,7 @@ export const PHOTO = {
 
 export const LIVENESS = {
   FRAME_RETENTION_DAYS: 30,
-  DUPLICATE_HASH_THRESHOLD: 0.05,
+  DUPLICATE_HASH_THRESHOLD: 0.012,
 };
 
 export const SWIPE = {
